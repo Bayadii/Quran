@@ -37,7 +37,7 @@ function App() {
     }
   }
 
-  const openReader = async (type, number, verseNumber = 1) => {
+  const openReader = async (type, number, verseNumber = null) => {
     setScreen('reader')
     setReaderLoading(true)
     setError('')
@@ -76,7 +76,7 @@ function App() {
 
 function Home({ lastRead, onRead, onContinue }) {
   return <main className="home-page page-padding">
-    <section className="home-copy"><p className="kicker">Bismillahirrahmanirrahim</p></section>
+    <section className="home-copy"><p className="home-bismillah">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p></section>
     <div className="home-actions">
       <button className="action-card primary-action" onClick={onRead}><span className="action-icon"><BookOpen size={22} /></span><strong>Baca Al-Qur'an</strong><ChevronRight size={20} /></button>
       <button className="action-card" onClick={onContinue} disabled={!lastRead}><span className="action-icon"><RotateCcw size={21} /></span><strong>{lastRead ? 'Lanjutkan membaca' : 'Lanjutkan membaca'}</strong><ChevronRight size={20} /></button>
@@ -117,7 +117,12 @@ function Reader({ reader, loading, error, bookmarks, lastRead, onBack, onBookmar
   const containerRef = useRef(null)
   const fullAudioRef = useRef(null)
   const [activeAudio, setActiveAudio] = useState(null)
-  useEffect(() => { if (!reader || !containerRef.current) return; const target = containerRef.current.querySelector(`[data-verse="${reader.initialVerse}"]`); if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 80) }, [reader])
+  useEffect(() => {
+    if (!reader || !containerRef.current) return
+    const selector = reader.initialVerse === null ? '.bismillah' : `[data-verse="${reader.initialVerse}"]`
+    const target = containerRef.current.querySelector(selector) || containerRef.current
+    setTimeout(() => target.scrollIntoView({ block: 'start' }), 80)
+  }, [reader])
   useEffect(() => { const root = containerRef.current; if (!root || !reader) return; const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { const verse = Number(entry.target.dataset.verse); onProgress({ type: reader.type, number: reader.number, verse, surahName: reader.namaLatin || `Juz ${reader.number}`, surahNumber: reader.type === 'surah' ? reader.number : entry.target.dataset.surah }) } }), { rootMargin: '-20% 0px -65% 0px' }); root.querySelectorAll('[data-verse]').forEach(item => observer.observe(item)); return () => observer.disconnect() }, [reader, onProgress])
   if (loading) return <div className="reader-page"><ReaderHeader title="Memuat bacaan" onBack={onBack} /><Loading label="Menyiapkan ayat" /></div>
   if (error) return <div className="reader-page"><ReaderHeader title="Bacaan" onBack={onBack} /><ErrorMessage message={error} /></div>
