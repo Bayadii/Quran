@@ -28,7 +28,35 @@ function App() {
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.bookmarks, JSON.stringify(bookmarks)) }, [bookmarks])
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.lastRead, JSON.stringify(lastRead)) }, [lastRead])
 
-  const openLibrary = async (tab = 'surah') => {
+  const pushNavigation = (state) => window.history.pushState({ quran: true, ...state }, '', window.location.href)
+
+  useEffect(() => {
+    const currentState = window.history.state
+    if (!currentState?.quran) window.history.replaceState({ quran: true, screen: 'home' }, '', window.location.href)
+    window.history.pushState({ quran: true, screen: 'home', guard: true }, '', window.location.href)
+
+    const handlePopState = event => {
+      const nextState = event.state
+      if (!nextState?.quran) return
+      setError('')
+      if (nextState.screen === 'home') {
+        setScreen('home')
+      } else if (nextState.screen === 'library') {
+        setScreen('library')
+        setLibraryTab(nextState.tab || 'surah')
+      } else if (nextState.screen === 'doa') {
+        setScreen('doa')
+      } else if (nextState.screen === 'reader' && nextState.reader) {
+        setScreen('reader')
+        openReader(nextState.reader.type, nextState.reader.number, nextState.reader.verse, false)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const openLibrary = async (tab = 'surah', addHistory = true) => {
+    if (addHistory) pushNavigation({ screen: 'library', tab })
     setScreen('library')
     setLibraryTab(tab)
     setError('')
@@ -38,7 +66,8 @@ function App() {
     }
   }
 
-  const openDoa = async () => {
+  const openDoa = async (addHistory = true) => {
+    if (addHistory) pushNavigation({ screen: 'doa' })
     setScreen('doa')
     setError('')
     if (doas.length) return
@@ -46,7 +75,8 @@ function App() {
     try { setDoas(await getDoas()) } catch (caught) { setError(caught.message) } finally { setReaderLoading(false) }
   }
 
-  const openReader = async (type, number, verseNumber = null) => {
+  const openReader = async (type, number, verseNumber = null, addHistory = true) => {
+    if (addHistory) pushNavigation({ screen: 'reader', reader: { type, number, verse: verseNumber } })
     setScreen('reader')
     setReaderLoading(true)
     setError('')
@@ -66,7 +96,11 @@ function App() {
     } catch (caught) { setError(caught.message) } finally { setReaderLoading(false) }
   }
 
-  const goBack = () => { setError(''); setScreen(screen === 'reader' ? 'library' : 'home') }
+  const goBack = () => window.history.back()
+  const changeLibraryTab = tab => {
+    setLibraryTab(tab)
+    pushNavigation({ screen: 'library', tab })
+  }
   const toggleBookmark = (ayah) => {
     const key = `${ayah.surahNumber}-${ayah.verseNumber}`
     setBookmarks(current => current.some(item => item.key === key)
@@ -77,8 +111,8 @@ function App() {
   return (
     <div className="app-shell">
       {screen === 'home' && <Home lastRead={lastRead} onRead={() => openLibrary()} onDoa={openDoa} onContinue={() => lastRead && openReader(lastRead.type, lastRead.number, lastRead.verse)} />}
-      {screen === 'library' && <Library tab={libraryTab} setTab={setLibraryTab} surahs={surahs} bookmarks={bookmarks} lastRead={lastRead} search={search} setSearch={setSearch} loading={readerLoading} error={error} onBack={goBack} onReader={openReader} onBookmark={toggleBookmark} />}
-      {screen === 'doa' && <DoaPage doas={doas} loading={readerLoading} error={error} onBack={() => { setError(''); setScreen('home') }} />}
+      {screen === 'library' && <Library tab={libraryTab} setTab={changeLibraryTab} surahs={surahs} bookmarks={bookmarks} lastRead={lastRead} search={search} setSearch={setSearch} loading={readerLoading} error={error} onBack={goBack} onReader={openReader} onBookmark={toggleBookmark} />}
+      {screen === 'doa' && <DoaPage doas={doas} loading={readerLoading} error={error} onBack={goBack} />}
       {screen === 'reader' && <Reader reader={reader} loading={readerLoading} error={error} bookmarks={bookmarks} lastRead={lastRead} onBack={goBack} onBookmark={toggleBookmark} onProgress={setLastRead} onNext={openReader} />}
     </div>
   )
