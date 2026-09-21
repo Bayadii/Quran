@@ -75,3 +75,4 @@ h1 em { color: var(--sage); font-family: Georgia, serif; font-weight: 400; lette
 .next-surah span { grid-column: 1 / -1; color: var(--muted); font-size: 10px; }
 .next-surah strong { color: var(--sage); font-size: 15px; font-weight: 600; }
 .next-surah svg { grid-column: 2; grid-row: 2; align-self: center; color: var(--sage); }
+.bismillah { scroll-margin-top: 86px; }
