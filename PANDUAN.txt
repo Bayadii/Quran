@@ -42,10 +42,10 @@ Cara melalui dashboard Cloudflare:
 5. Pilih repository project ini.
 6. Isi pengaturan build berikut:
 
-   Framework preset: Vite
+    Framework preset: Vite (opsional; jika tidak tersedia, pilih None/Other)
    Build command: npm run build
    Build output directory: dist
-   Node.js version: 18
+    Node.js version: 18 atau lebih baru
 
 7. Klik Save and Deploy.
 
