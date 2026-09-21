@@ -1,0 +1,68 @@
+QURAN - PANDUAN PENGGUNAAN DAN DEPLOY
+
+1. KEBUTUHAN
+
+- Node.js 18 atau lebih baru
+- npm
+- Browser modern dengan koneksi internet
+
+2. MENJALANKAN DI LOKAL
+
+Buka terminal pada folder project, lalu jalankan:
+
+    npm install
+    npm run dev
+
+Buka alamat yang ditampilkan Vite, biasanya:
+
+    http://localhost:5173/
+
+Untuk membuat build production:
+
+    npm run build
+
+Hasil build akan berada di folder dist/.
+
+3. CARA PENGGUNAAN
+
+- Pilih "Baca Al-Qur'an" untuk membuka daftar surah.
+- Pilih surah untuk membaca ayat, memutar audio, atau menyimpan bookmark.
+- Gunakan "Lanjutkan membaca" untuk membuka ayat terakhir yang tersimpan.
+- Tab "Bookmark" berisi ayat-ayat yang disimpan dan akses terakhir dibaca.
+- Bookmark dan progres terakhir disimpan otomatis di localStorage browser.
+
+4. DEPLOY KE CLOUDFLARE PAGES
+
+Cara melalui dashboard Cloudflare:
+
+1. Push project ke repository GitHub atau GitLab.
+2. Masuk ke dashboard Cloudflare.
+3. Buka Workers & Pages lalu pilih Create application.
+4. Pilih Pages dan Connect to Git.
+5. Pilih repository project ini.
+6. Isi pengaturan build berikut:
+
+   Framework preset: Vite
+   Build command: npm run build
+   Build output directory: dist
+   Node.js version: 18
+
+7. Klik Save and Deploy.
+
+Setiap push ke branch yang terhubung akan memicu deployment baru.
+
+5. DEPLOY MANUAL
+
+1. Jalankan npm run build.
+2. Di Cloudflare Pages pilih Create application lalu Direct Upload.
+3. Upload folder dist/.
+4. Selesaikan deployment.
+
+6. SUMBER DATA
+
+Aplikasi mengambil data dari:
+
+    https://equran.id/api/v2
+
+Pastikan pengguna memiliki koneksi internet saat membuka daftar surah,
+detail ayat, dan audio.
