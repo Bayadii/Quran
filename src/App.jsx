@@ -112,7 +112,7 @@ function DoaPage({ doas, loading, error, onBack }) {
   return <main className="doa-page">
     <header className="topbar"><button className="icon-button" onClick={onBack} aria-label="Kembali"><ArrowLeft size={20} /></button><span className="topbar-title">Doa</span></header>
     <section className="doa-content page-padding">
-      <div className="doa-heading"><span className="section-eyebrow">DOA & DZIKIR</span><h1>Kumpulan doa</h1><p>Temukan doa untuk berbagai kebutuhan sehari-hari.</p></div>
+      <div className="doa-heading"><span className="section-eyebrow"></span><h1>Kumpulan Doa</h1><p></p></div>
       <div className="doa-filters">
         <label className="search-box doa-search"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cari doa..." />{query && <button onClick={() => setQuery('')} aria-label="Hapus pencarian"><X size={16} /></button>}</label>
         <label className="filter-field"><span>Kategori</span><select value={group} onChange={event => setGroup(event.target.value)}><option value="">Semua kategori</option>{groups.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
