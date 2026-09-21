@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Bookmark, BookmarkCheck, BookOpen, ChevronRight, CirclePlay, Headphones, Home as HomeIcon, LoaderCircle, Pause, RotateCcw, Search, X } from 'lucide-react'
-import { getJuz, getSurah, getSurahs } from './api'
+import { ArrowLeft, Bookmark, BookmarkCheck, BookOpen, ChevronRight, CirclePlay, Filter, Headphones, Home as HomeIcon, LoaderCircle, Pause, RotateCcw, Search, X } from 'lucide-react'
+import { getDoas, getJuz, getSurah, getSurahs } from './api'
 
 const STORAGE_KEYS = { bookmarks: 'senja-quran-bookmarks', lastRead: 'senja-quran-last-read' }
 
@@ -23,6 +23,7 @@ function App() {
   const [readerLoading, setReaderLoading] = useState(false)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [doas, setDoas] = useState([])
 
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.bookmarks, JSON.stringify(bookmarks)) }, [bookmarks])
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.lastRead, JSON.stringify(lastRead)) }, [lastRead])
@@ -35,6 +36,14 @@ function App() {
       setReaderLoading(true)
       try { setSurahs(await getSurahs()) } catch (caught) { setError(caught.message) } finally { setReaderLoading(false) }
     }
+  }
+
+  const openDoa = async () => {
+    setScreen('doa')
+    setError('')
+    if (doas.length) return
+    setReaderLoading(true)
+    try { setDoas(await getDoas()) } catch (caught) { setError(caught.message) } finally { setReaderLoading(false) }
   }
 
   const openReader = async (type, number, verseNumber = null) => {
@@ -67,21 +76,57 @@ function App() {
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home lastRead={lastRead} onRead={() => openLibrary()} onContinue={() => lastRead && openReader(lastRead.type, lastRead.number, lastRead.verse)} />}
+      {screen === 'home' && <Home lastRead={lastRead} onRead={() => openLibrary()} onDoa={openDoa} onContinue={() => lastRead && openReader(lastRead.type, lastRead.number, lastRead.verse)} />}
       {screen === 'library' && <Library tab={libraryTab} setTab={setLibraryTab} surahs={surahs} bookmarks={bookmarks} lastRead={lastRead} search={search} setSearch={setSearch} loading={readerLoading} error={error} onBack={goBack} onReader={openReader} onBookmark={toggleBookmark} />}
+      {screen === 'doa' && <DoaPage doas={doas} loading={readerLoading} error={error} onBack={() => { setError(''); setScreen('home') }} />}
       {screen === 'reader' && <Reader reader={reader} loading={readerLoading} error={error} bookmarks={bookmarks} lastRead={lastRead} onBack={goBack} onBookmark={toggleBookmark} onProgress={setLastRead} onNext={openReader} />}
     </div>
   )
 }
 
-function Home({ lastRead, onRead, onContinue }) {
+function Home({ lastRead, onRead, onDoa, onContinue }) {
   return <main className="home-page page-padding">
     <section className="home-copy"><p className="home-bismillah">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p></section>
     <div className="home-actions">
       <button className="action-card primary-action" onClick={onRead}><span className="action-icon"><BookOpen size={22} /></span><strong>Baca Al-Qur'an</strong><ChevronRight size={20} /></button>
-      <button className="action-card" onClick={onContinue} disabled={!lastRead}><span className="action-icon"><RotateCcw size={21} /></span><strong>{lastRead ? 'Lanjutkan membaca' : 'Lanjutkan membaca'}</strong><ChevronRight size={20} /></button>
+      <button className="action-card" onClick={onContinue} disabled={!lastRead}><span className="action-icon"><RotateCcw size={21} /></span><strong>Lanjutkan Membaca Al-Qur'an</strong><ChevronRight size={20} /></button>
+      <button className="action-card" onClick={onDoa}><span className="action-icon"><Filter size={21} /></span><strong>Doa</strong><ChevronRight size={20} /></button>
     </div>
   </main>
+}
+
+function DoaPage({ doas, loading, error, onBack }) {
+  const [query, setQuery] = useState('')
+  const [group, setGroup] = useState('')
+  const [tag, setTag] = useState('')
+  const groups = useMemo(() => [...new Set(doas.map(doa => doa.grup).filter(Boolean))], [doas])
+  const tags = useMemo(() => [...new Set(doas.flatMap(doa => Array.isArray(doa.tag) ? doa.tag : []))], [doas])
+  const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    return doas.filter(doa => {
+      const searchable = [doa.nama, doa.grup, doa.ar, doa.tr, doa.idn, ...(doa.tag || [])].filter(Boolean).join(' ').toLowerCase()
+      return (!normalizedQuery || searchable.includes(normalizedQuery)) && (!group || doa.grup === group) && (!tag || (doa.tag || []).includes(tag))
+    })
+  }, [doas, group, query, tag])
+
+  return <main className="doa-page">
+    <header className="topbar"><button className="icon-button" onClick={onBack} aria-label="Kembali"><ArrowLeft size={20} /></button><span className="topbar-title">Doa</span></header>
+    <section className="doa-content page-padding">
+      <div className="doa-heading"><span className="section-eyebrow">DOA & DZIKIR</span><h1>Kumpulan doa</h1><p>Temukan doa untuk berbagai kebutuhan sehari-hari.</p></div>
+      <div className="doa-filters">
+        <label className="search-box doa-search"><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Cari doa..." />{query && <button onClick={() => setQuery('')} aria-label="Hapus pencarian"><X size={16} /></button>}</label>
+        <label className="filter-field"><span>Kategori</span><select value={group} onChange={event => setGroup(event.target.value)}><option value="">Semua kategori</option>{groups.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
+        <label className="filter-field"><span>Tag</span><select value={tag} onChange={event => setTag(event.target.value)}><option value="">Semua tag</option>{tags.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
+      </div>
+      {loading && <Loading label="Menyiapkan daftar doa" />}
+      {error && <ErrorMessage message={error} />}
+      {!loading && !error && <><div className="doa-result-count">{filtered.length} doa</div><div className="doa-list">{filtered.map(doa => <DoaItem key={doa.id} doa={doa} />)}</div>{filtered.length === 0 && <div className="empty-state"><Filter size={22} /><strong>Doa tidak ditemukan</strong><p>Coba ubah kata pencarian atau filter.</p></div>}</>}
+    </section>
+  </main>
+}
+
+function DoaItem({ doa }) {
+  return <article className="doa-item"><div className="doa-item-top"><span className="doa-number">{String(doa.id).padStart(3, '0')}</span><div><h2>{doa.nama}</h2><small>{doa.grup}</small></div></div><p className="doa-arabic">{doa.ar}</p><p className="doa-latin">{doa.tr}</p><p className="doa-translation">{doa.idn}</p>{doa.tag?.length > 0 && <div className="doa-tags">{doa.tag.map(item => <span key={item}>#{item}</span>)}</div>}{doa.tentang && <details><summary>Referensi</summary><p>{doa.tentang}</p></details>}</article>
 }
 
 function Library({ tab, setTab, surahs, bookmarks, lastRead, search, setSearch, loading, error, onBack, onReader, onBookmark }) {
